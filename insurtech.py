@@ -2,10 +2,10 @@ import streamlit as st
 import base64
 import re
 
-# 1. إعداد الصفحة (تغيير الاسم كما طلبت)
+# 1. إعدادات الصفحة
 st.set_page_config(page_title="InsurTech", page_icon="🛡️", layout="wide")
 
-# 2. وظيفة تحميل الخلفية بأمان
+# 2. وظيفة تحميل الخلفية (لازم تتأكد إن الصورة مرفوعة باسم background.png)
 def get_base64_img(bin_file):
     try:
         with open(bin_file, 'rb') as f:
@@ -15,126 +15,123 @@ def get_base64_img(bin_file):
 
 bg_data = get_base64_img('background.png')
 
-# 3. CSS احترافي (Lemonade Style + RTL)
+# 3. CSS مطور للموبايل (Media Queries)
 style_css = f"""
 <style>
-    /* إخفاء الزوائد */
     header, footer, #MainMenu {{visibility: hidden;}}
     
-    /* الخلفية والاتجاه */
     .stApp {{
-        background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("data:image/png;base64,{bg_data}");
+        background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("data:image/png;base64,{bg_data}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        color: white !important;
     }}
 
-    /* النيف بار العلوي */
+    /* تصميم الـ Navbar ليكون مرن */
     .nav-bar {{
-        background: rgba(10, 25, 41, 0.9);
-        padding: 15px 60px;
+        background: rgba(10, 25, 41, 0.95);
+        padding: 10px 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         position: fixed;
         top: 0; left: 0; width: 100%;
         z-index: 1000;
-        border-bottom: 1px solid #00f2fe;
+        border-bottom: 2px solid #00f2fe;
     }}
 
-    /* كارت تسجيل الدخول */
+    /* ضبط الحاويات للموبايل */
+    @media (max-width: 768px) {{
+        .login-box {{
+            margin-top: 80px !important;
+            padding: 20px !important;
+        }}
+        h1 {{ font-size: 28px !important; }}
+        .display-screen {{ height: 250px !important; margin-top: 20px; }}
+    }}
+
     .login-box {{
-        background: rgba(15, 32, 54, 0.95);
-        border: 2px solid #00f2fe;
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        background: rgba(15, 32, 54, 0.9);
+        border: 1px solid #00f2fe;
+        border-radius: 15px;
+        padding: 30px;
         direction: RTL;
     }}
 
-    /* شاشة العرض الي في الشمال */
     .display-screen {{
-        background: rgba(0,0,0,0.5);
-        border: 1px solid rgba(0, 242, 254, 0.3);
-        border-radius: 20px;
-        height: 450px;
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(0, 242, 254, 0.2);
+        border-radius: 15px;
+        height: 400px;
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
     }}
 
-    /* تنسيق النصوص */
     h1, h2, h3, p, label {{ color: white !important; text-align: right; }}
+    
+    /* جعل أزرار الاستريم ليت تتفاعل صح */
     .stButton>button {{
+        width: 100% !important;
         background-color: #00f2fe !important;
         color: #0a1929 !important;
-        font-weight: bold !important;
-        width: 100%;
-        border-radius: 10px;
+        border-radius: 8px !important;
+        border: none !important;
+        height: 45px;
     }}
 </style>
 """
 st.markdown(style_css, unsafe_allow_html=True)
 
-# --- 1. الـ Navbar (زي سكرين شوت ليمونيد) ---
+# 4. الـ Navbar
 st.markdown("""
     <div class="nav-bar">
-        <div style="font-size: 24px; font-weight: bold; color: #00f2fe;">🛡️ InsurTech</div>
-        <div style="display: flex; gap: 30px; color: white; direction: RTL;">
+        <div style="font-size: 20px; font-weight: bold; color: #00f2fe;">🛡️ InsurTech</div>
+        <div style="color: white; direction: RTL; font-size: 14px; display: flex; gap: 10px;">
             <span>الرئيسية</span>
-            <span>عن المنصة</span>
             <span>الدعم</span>
         </div>
-        <button style="background: transparent; border: 1px solid #00f2fe; color: #00f2fe; padding: 5px 15px; border-radius: 5px;">Sign Up</button>
     </div>
 """, unsafe_allow_html=True)
 
-st.write("#") # سبيس تحت النيف بار
+# مسافة للأمان عشان الـ Navbar ميتغطاش
+st.write("###")
 
-# --- 2. الجسم الرئيسي (Hero Section) ---
-col_right, col_left = st.columns([1, 1.3], gap="large")
+# 5. الجسم الرئيسي باستخدام الترتيب الذكي
+# في الموبايل الـ Login هيظهر الأول وبعده الشاشة
+col_right, col_left = st.columns([1, 1.2])
 
 with col_right:
     st.markdown('<div class="login-box">', unsafe_allow_html=True)
-    st.markdown("<h1 style='font-size: 45px; margin-bottom: 10px;'>أمن مستقبل ك بلمسة</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 18px; opacity: 0.8;'>أول نظام تأمين في مصر يعمل بالذكاء الاصطناعي بالكامل.</p>", unsafe_allow_html=True)
+    st.markdown("<h1>أمن مستقبلك بلمسة</h1>", unsafe_allow_html=True)
     
-    # فورم الدخول مع التنبيهات
-    with st.form("main_login"):
+    with st.form("mobile_login_form"):
         user = st.text_input("اسم المستخدم")
         pwd = st.text_input("كلمة المرور", type="password")
-        st.markdown("<p style='font-size: 12px; color: #00f2fe;'>نسيت كلمة المرور؟</p>", unsafe_allow_html=True)
         
-        btn = st.form_submit_button("دخول للنظام")
+        # الزرار هنا لازم يكون جوه الـ form عشان يشتغل
+        submitted = st.form_submit_button("تسجيل الدخول")
         
-        if btn:
+        if submitted:
             if not user or not pwd:
-                st.error("❌ الخانات فاضية يا بطل")
-            elif bool(re.search(r'[^a-zA-Z0-9\u0621-\u064A ]', user)):
-                st.error("⚠️ ممنوع الرموز زي (@, #, $)")
+                st.error("الخانات فاضية!")
             elif user == "admin" and pwd == "123":
-                st.toast("نورت يا هندسة! 🚀")
+                st.success("تم الدخول!")
+                st.balloons()
             else:
-                st.error("❌ البيانات غلط")
+                st.error("البيانات خطأ")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col_left:
-    st.markdown(f"""
+    st.markdown("""
         <div class="display-screen">
-            <div>
-                <h2 style="color: #00f2fe;">[ واجهة التحليل الذكي ]</h2>
-                <p style="text-align: center;">اكتشف أفضل عروض التأمين المخصصة لك</p>
-            </div>
+            <h3 style="color: #00f2fe; padding: 10px;">[ واجهة التحليل الذكي ]</h3>
         </div>
     """, unsafe_allow_html=True)
     
-    # الأزرار الي تحت الشاشة
-    st.markdown("""
-        <div style="display: flex; justify-content: center; gap: 40px; margin-top: 25px;">
-            <span style="color: #00f2fe; border-bottom: 2px solid #00f2fe; padding-bottom: 5px; cursor: pointer;">تأمين السيارات</span>
-            <span style="color: white; opacity: 0.6; cursor: pointer;">تأمين الممتلكات</span>
-            <span style="color: white; opacity: 0.6; cursor: pointer;">تأمين السفر</span>
-        </div>
-    """, unsafe_allow_html=True)
+    # أزرار سفلية بسيطة
+    cols = st.columns(3)
+    cols[0].markdown("<p style='text-align:center; font-size:12px; color:#00f2fe;'>سيارات</p>", unsafe_allow_html=True)
+    cols[1].markdown("<p style='text-align:center; font-size:12px; color:white;'>ممتلكات</p>", unsafe_allow_html=True)
+    cols[2].markdown("<p style='text-align:center; font-size:12px; color:white;'>سفر</p>", unsafe_allow_html=True)
