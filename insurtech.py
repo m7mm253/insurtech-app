@@ -5,17 +5,19 @@ import base64
 # --- إعدادات الصفحة ---
 st.set_page_config(page_title="SecureNow Egypt", page_icon="🛡️", layout="wide")
 
-# --- دالة لتحميل الصورة وتحويلها عشان CSS ---
+# --- دالة لتحميل الصورة وتحويلها ---
 def get_base64(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-# --- دالة وضع الخلفية بتصميم الصورة بتاعتك ---
-def set_bg():
     try:
-        # هنا بنحمل ملف الصورة اللي سميناه background.png
-        bin_str = get_base64('background.png')
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except FileNotFoundError:
+        return None
+
+# --- دالة وضع الخلفية ---
+def set_bg():
+    bin_str = get_base64('background.png')
+    if bin_str:
         page_bg_img = f'''
         <style>
         .stApp {{
@@ -24,32 +26,20 @@ def set_bg():
             background-position: center;
             background-attachment: fixed;
         }}
-        
-        /* جعل محتوى الصفحة شفافاً فوق الخلفية */
-        .main {{
-            background: rgba(0,0,0,0);
-        }}
-        
-        /* تخصيص مظهر خانات الدخول عشان تمشي مع ستايل التكنولوجيا */
+        .main {{ background: rgba(0,0,0,0); }}
         .stForm {{
-            background-color: rgba(0, 48, 73, 0.85); /* لون أزرق غامق شفاف */
-            border-radius: 15px;
-            padding: 30px;
-            border: 2px solid #00f2fe; /* حدود مضيئة */
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
+            background-color: rgba(0, 20, 40, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #00f2fe;
         }}
-        
-        h1, h2, h3, .stText, p {{
-            color: #ffffff !important; /* لون الخط أبيض */
-            font-family: 'Segoe UI', sans-serif;
-        }}
+        h1, h2, h3, p, label {{ color: white !important; }}
         </style>
         '''
-        st.markdown(page_bg_img, unsafe_allow_safe=True)
-    except FileNotFoundError:
-        st.warning("⚠️ لم نجد ملف background.png. تأكد من وضعه في نفس الفولدر.")
+        st.markdown(page_bg_img, unsafe_allow_html=True)
+    else:
+        st.sidebar.warning("⚠️ يرجى رفع ملف background.png")
 
-# --- تطبيق الخلفية ---
 set_bg()
 
 # --- إدارة الحالة (Session State) ---
@@ -57,23 +47,16 @@ if 'users_db' not in st.session_state:
     st.session_state.users_db = {'admin': '123'} 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = None
 
-# --- واجهة الدخول (ستظهر فوق الخلفية المضيئة) ---
+# --- واجهة الدخول ---
 if not st.session_state.logged_in:
-    # بنعمل مسافة كبيرة فوق عشان عناصر الدخول تنزل تحت العنوان الكبير اللي في الصورة
-    st.write("#") 
-    st.write("#")
-    
-    # اختيار اللغة
-    lang = st.sidebar.radio("🌐 Choose Language / اختر اللغة", ["العربية", "English"])
+    # اختيار اللغة من القائمة الجانبية
+    lang = st.sidebar.radio("Language / اللغة", ["العربية", "English"])
     
     st.sidebar.markdown("---")
     
-    # قسم الدخول في القائمة الجانبية أو في المنتصف
-    # عشان عناصر الـ form متداريش العنوان الكبير في الصورة، هنحطها في sidebar
-    st.sidebar.markdown(f"<h3 style='text-align: center; color: white;'>{'تسجيل الدخول' if lang == 'العربية' else 'Login'}</h3>", unsafe_allow_safe=True)
+    # هنا التصحيح: استخدمنا unsafe_allow_html بدلاً من unsafe_allow_safe
+    st.sidebar.markdown(f"<h3 style='text-align: center; color: white;'>{'تسجيل الدخول' if lang == 'العربية' else 'Login'}</h3>", unsafe_allow_html=True)
     
     with st.sidebar.form("login"):
         u = st.text_input("Username / اسم المستخدم")
@@ -85,12 +68,11 @@ if not st.session_state.logged_in:
                 st.rerun()
             else:
                 st.error("خطأ / Invalid Credentials")
-                
-    st.sidebar.markdown(f"<p style='text-align: center; color: white;'>{'ليس لديك حساب؟ قم بإنشاء واحد.' if lang == 'العربية' else 'No account? Create one.'}</p>", unsafe_allow_safe=True)
 
-# --- واجهة التطبيق الرئيسية (بعد الدخول) ---
+# --- واجهة التطبيق (بعد الدخول) ---
 else:
-    st.sidebar.title(f"Welcome, {st.session_state.current_user} 👋")
-    # ... باقي كود التطبيق بتاعك (الشراء، التأميناتي) ...
-    st.header("🛡️ لوحة التحكم - SecureNow")
-    st.write("ابدأ تجربتك التقنية في عالم التأمين.")
+    st.title(f"Welcome, {st.session_state.current_user} 👋")
+    if st.sidebar.button("Logout / خروج"):
+        st.session_state.logged_in = False
+        st.rerun()
+    st.info("أهلاً بك في نظام التأمين المتطور.")
