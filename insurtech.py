@@ -2,10 +2,10 @@ import streamlit as st
 import base64
 import re
 
-# 1. إعدادات الصفحة
+# 1. إعدادات الصفحة واسم التطبيق
 st.set_page_config(page_title="InsurTech", page_icon="🛡️", layout="wide")
 
-# 2. وظيفة تحميل الخلفية (لازم تتأكد إن الصورة مرفوعة باسم background.png)
+# 2. وظيفة تحميل الخلفية (تأكد أن الملف اسمه background.png)
 def get_base64_img(bin_file):
     try:
         with open(bin_file, 'rb') as f:
@@ -15,123 +15,105 @@ def get_base64_img(bin_file):
 
 bg_data = get_base64_img('background.png')
 
-# 3. CSS مطور للموبايل (Media Queries)
+# 3. الـ CSS السحري (RTL + إخفاء الأدوات + Responsive)
 style_css = f"""
 <style>
+    /* إخفاء شريط الأدوات العلوي والأسفل تماماً */
     header, footer, #MainMenu {{visibility: hidden;}}
     
+    /* ضبط الخلفية والاتجاه العام للعربية */
     .stApp {{
-        background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("data:image/png;base64,{bg_data}");
+        background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("data:image/png;base64,{bg_data}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-    }}
-
-    /* تصميم الـ Navbar ليكون مرن */
-    .nav-bar {{
-        background: rgba(10, 25, 41, 0.95);
-        padding: 10px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: fixed;
-        top: 0; left: 0; width: 100%;
-        z-index: 1000;
-        border-bottom: 2px solid #00f2fe;
-    }}
-
-    /* ضبط الحاويات للموبايل */
-    @media (max-width: 768px) {{
-        .login-box {{
-            margin-top: 80px !important;
-            padding: 20px !important;
-        }}
-        h1 {{ font-size: 28px !important; }}
-        .display-screen {{ height: 250px !important; margin-top: 20px; }}
-    }}
-
-    .login-box {{
-        background: rgba(15, 32, 54, 0.9);
-        border: 1px solid #00f2fe;
-        border-radius: 15px;
-        padding: 30px;
         direction: RTL;
+        text-align: right;
     }}
 
-    .display-screen {{
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(0, 242, 254, 0.2);
-        border-radius: 15px;
-        height: 400px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
+    /* كارت تسجيل الدخول */
+    .auth-card {{
+        background: rgba(10, 25, 41, 0.9);
+        border: 2px solid #00f2fe;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 500px;
+        margin: auto;
+        box-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
     }}
 
-    h1, h2, h3, p, label {{ color: white !important; text-align: right; }}
-    
-    /* جعل أزرار الاستريم ليت تتفاعل صح */
+    /* تحسين الخانات والزراير للموبايل */
+    h1, h2, h3, p, label {{ color: white !important; font-family: 'Tahoma', sans-serif; }}
     .stButton>button {{
         width: 100% !important;
         background-color: #00f2fe !important;
         color: #0a1929 !important;
-        border-radius: 8px !important;
-        border: none !important;
-        height: 45px;
+        font-weight: bold !important;
+        border-radius: 10px !important;
+        height: 48px !important;
     }}
+    
+    /* منع الرموز من قلب اتجاه الخانات */
+    input {{ direction: RTL !important; text-align: right !important; }}
 </style>
 """
 st.markdown(style_css, unsafe_allow_html=True)
 
-# 4. الـ Navbar
-st.markdown("""
-    <div class="nav-bar">
-        <div style="font-size: 20px; font-weight: bold; color: #00f2fe;">🛡️ InsurTech</div>
-        <div style="color: white; direction: RTL; font-size: 14px; display: flex; gap: 10px;">
-            <span>الرئيسية</span>
-            <span>الدعم</span>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+# 4. إدارة حالة الجلسة (Session State)
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-# مسافة للأمان عشان الـ Navbar ميتغطاش
-st.write("###")
+# 5. واجهة المستخدم (UI)
+if not st.session_state.logged_in:
+    # شريط علوي بسيط للغة والتسجيل الجديد
+    col_lang, col_reg = st.columns([1, 1])
+    with col_lang:
+        st.selectbox("🌐 اللغة", ["العربية", "English"])
+    with col_reg:
+        if st.button("إنشاء حساب جديد"):
+            st.toast("سيتم فتح صفحة التسجيل قريباً")
 
-# 5. الجسم الرئيسي باستخدام الترتيب الذكي
-# في الموبايل الـ Login هيظهر الأول وبعده الشاشة
-col_right, col_left = st.columns([1, 1.2])
+    st.write("##") # مسافة
 
-with col_right:
-    st.markdown('<div class="login-box">', unsafe_allow_html=True)
-    st.markdown("<h1>أمن مستقبلك بلمسة</h1>", unsafe_allow_html=True)
+    # حاوية الدخول الرئيسية
+    st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>🛡️ InsurTech</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; opacity: 0.8;'>سجل دخولك للوصول لنظام التأمين الذكي</p>", unsafe_allow_html=True)
     
-    with st.form("mobile_login_form"):
-        user = st.text_input("اسم المستخدم")
-        pwd = st.text_input("كلمة المرور", type="password")
+    with st.form("login_form"):
+        u = st.text_input("اسم المستخدم", placeholder="User123")
+        p = st.text_input("كلمة المرور", type="password")
         
-        # الزرار هنا لازم يكون جوه الـ form عشان يشتغل
-        submitted = st.form_submit_button("تسجيل الدخول")
+        col_check, col_forgot = st.columns([1, 1])
+        with col_check:
+            remember = st.checkbox("تذكرني")
+        with col_forgot:
+            # زر "نسيت كلمة المرور" داخل الفورم لضبط الشكل
+            pass # سيتم وضعه بالخارج ليعمل كـ Button
+
+        submit = st.form_submit_button("تسجيل الدخول")
         
-        if submitted:
-            if not user or not pwd:
-                st.error("الخانات فاضية!")
-            elif user == "admin" and pwd == "123":
-                st.success("تم الدخول!")
-                st.balloons()
+        # --- نظام التنبيهات الذكي (التحقق من البيانات) ---
+        if submit:
+            if not u or not p:
+                st.error("❌ عذراً، يجب إدخال اسم المستخدم وكلمة المرور")
+            elif bool(re.search(r'[^a-zA-Z0-9\u0621-\u064A ]', u)):
+                st.error("⚠️ خطأ: لا يسمح باستخدام رموز خاصة مثل (#, $, @, *)")
+            elif u == "admin" and p == "123":
+                st.session_state.logged_in = True
+                st.success("تم الدخول بنجاح! 🎉")
+                st.rerun()
             else:
-                st.error("البيانات خطأ")
+                st.error("❌ خطأ في البيانات، تأكد من صحة الحساب")
+    
+    if st.button("Forgot Password / نسيت كلمة المرور؟"):
+        st.info("💡 يرجى مراسلة الدعم الفني لاستعادة حسابك.")
+        
     st.markdown('</div>', unsafe_allow_html=True)
 
-with col_left:
-    st.markdown("""
-        <div class="display-screen">
-            <h3 style="color: #00f2fe; padding: 10px;">[ واجهة التحليل الذكي ]</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # أزرار سفلية بسيطة
-    cols = st.columns(3)
-    cols[0].markdown("<p style='text-align:center; font-size:12px; color:#00f2fe;'>سيارات</p>", unsafe_allow_html=True)
-    cols[1].markdown("<p style='text-align:center; font-size:12px; color:white;'>ممتلكات</p>", unsafe_allow_html=True)
-    cols[2].markdown("<p style='text-align:center; font-size:12px; color:white;'>سفر</p>", unsafe_allow_html=True)
+# 6. واجهة التطبيق بعد الدخول
+else:
+    st.success("أهلاً بك في لوحة تحكم InsurTech")
+    if st.button("تسجيل الخروج"):
+        st.session_state.logged_in = False
+        st.rerun()
