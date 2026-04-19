@@ -1,73 +1,90 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 
-# إعداد الصفحة لتكون سريعة التحميل
-st.set_page_config(page_title="SecureNow Egypt", page_icon="🛡️")
+# 1. إعدادات الصفحة
+st.set_page_config(page_title="SecureNow Egypt", page_icon="🛡️", layout="centered")
 
-# --- محاكاة قاعدة البيانات (عشان نتفادى مشاكل الملفات حالياً) ---
-if 'db_policies' not in st.session_state:
-    st.session_state.db_policies = []
-if 'db_claims' not in st.session_state:
-    st.session_state.db_claims = []
+# 2. إدارة الحالة (Session State) للغة وتسجيل الدخول
+if 'language' not in st.session_state:
+    st.session_state.language = 'العربية'
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-st.title("🛡️ SecureNow Egypt")
-st.info("أهلاً بك في منصة التأمين المرن - نسخة تجريبية (MVP)")
+# --- قاموس اللغات (Translations) ---
+texts = {
+    'العربية': {
+        'welcome': 'مرحباً بك في SecureNow',
+        'login': 'تسجيل الدخول',
+        'user': 'اسم المستخدم',
+        'pass': 'كلمة المرور',
+        'enter': 'دخول',
+        'logout': 'تسجيل خروج',
+        'buy': 'شراء تأمين',
+        'my_policies': 'تأميناتي',
+        'admin': 'الإدارة',
+        'error': 'بيانات الدخول غير صحيحة'
+    },
+    'English': {
+        'welcome': 'Welcome to SecureNow',
+        'login': 'Login',
+        'user': 'Username',
+        'pass': 'Password',
+        'enter': 'Enter',
+        'logout': 'Logout',
+        'buy': 'Buy Insurance',
+        'my_policies': 'My Policies',
+        'admin': 'Admin Dashboard',
+        'error': 'Invalid credentials'
+    }
+}
 
-# --- القائمة الجانبية ---
-menu = ["شراء تأمين", "تأميناتي ومطالباتي", "لوحة الإدارة (Admin)"]
-choice = st.sidebar.radio("انتقل إلى:", menu)
-
-# --- 1. واجهة الشراء ---
-if choice == "شراء تأمين":
-    st.subheader("⚡ اختر بوليصتك المناسبة")
+# --- شاشة اختيار اللغة وتسجيل الدخول ---
+if not st.session_state.logged_in:
+    st.title("🛡️ SecureNow")
     
-    category = st.selectbox("نوع التأمين:", ["🚗 سيارة (يومي)", "📱 موبايل (سفر)", "📦 شحنة صغيرة"])
-    days = st.slider("المدة باليوم:", 1, 30, 1)
+    # اختيار اللغة
+    lang = st.radio("Choose Language / اختر اللغة", ["العربية", "English"], horizontal=True)
+    st.session_state.language = lang
+    T = texts[st.session_state.language]
     
-    # حساب السعر
-    rates = {"🚗 سيارة (يومي)": 50, "📱 موبايل (سفر)": 15, "📦 شحنة صغيرة": 5}
-    total = rates[category] * days
+    st.subheader(T['login'])
     
-    st.metric("السعر الإجمالي", f"{total} EGP")
-    
-    phone = st.text_input("أدخل رقم الموبايل لتأكيد الشراء")
-    
-    if st.button("تفعيل التأمين ✅"):
-        if phone:
-            new_p = {"ID": len(st.session_state.db_policies)+101, "User": phone, "Type": category, "Status": "Active"}
-            st.session_state.db_policies.append(new_p)
-            st.success(f"تم تفعيل التأمين! رقم البوليصة: {new_p['ID']}")
-            st.balloons()
-        else:
-            st.error("من فضلك أدخل رقم الموبايل أولاً")
-
-# --- 2. واجهة المطالبات ---
-elif choice == "تأميناتي ومطالباتي":
-    st.subheader("📋 متابعة بوالصك")
-    if st.session_state.db_policies:
-        st.table(pd.DataFrame(st.session_state.db_policies))
+    # واجهة تسجيل الدخول
+    with st.form("login_form"):
+        username = st.text_input(T['user'])
+        password = st.text_input(T['pass'], type="password")
+        submit = st.form_submit_button(T['enter'])
         
-        st.divider()
-        st.subheader("⚠️ تقديم طلب تعويض (Claim)")
-        p_id = st.number_input("أدخل رقم البوليصة:", min_value=101)
-        desc = st.text_area("وصف الحادث")
-        if st.button("إرسال المطالبة"):
-            new_c = {"PolicyID": p_id, "Description": desc, "Status": "Pending"}
-            st.session_state.db_claims.append(new_c)
-            st.warning("تم إرسال طلبك وجاري مراجعته.")
-    else:
-        st.write("لا توجد بوالص نشطة حالياً.")
+        if submit:
+            # تجربة: اسم المستخدم admin وكلمة السر 123
+            if username == "admin" and password == "123":
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error(T['error'])
 
-# --- 3. لوحة الإدارة ---
-elif choice == "لوحة الإدارة (Admin)":
-    st.subheader("📊 إحصائيات النظام")
-    col1, col2 = st.columns(2)
-    col1.metric("عدد العملاء", len(st.session_state.db_policies))
-    col2.metric("طلبات التعويض", len(st.session_state.db_claims))
+# --- التطبيق الأصلي (يظهر بعد تسجيل الدخول) ---
+else:
+    T = texts[st.session_state.language]
     
-    st.write("**طلبات التعويض الواردة:**")
-    if st.session_state.db_claims:
-        st.table(pd.DataFrame(st.session_state.db_claims))
-    else:
-        st.write("لا توجد طلبات حالياً.")
+    # القائمة الجانبية
+    st.sidebar.title(f"🛡️ {T['welcome']}")
+    choice = st.sidebar.radio("Menu", [T['buy'], T['my_policies'], T['admin']])
+    
+    if st.sidebar.button(T['logout']):
+        st.session_state.logged_in = False
+        st.rerun()
+
+    # محتوى التطبيق (الجزء اللي عملناه قبل كدة)
+    if choice == T['buy']:
+        st.header(T['buy'])
+        st.write("هنا تظهر واجهة الشراء...")
+        # يمكنك وضع كود الشراء السابق هنا
+        
+    elif choice == T['my_policies']:
+        st.header(T['my_policies'])
+        st.write("هنا تظهر قائمة التأمينات...")
+
+    elif choice == T['admin']:
+        st.header(T['admin'])
+        st.write("لوحة التحكم الخاصة بالإدارة")
