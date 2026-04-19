@@ -2,10 +2,10 @@ import streamlit as st
 import base64
 import re
 
-# 1. إعدادات الصفحة واسم التطبيق
+# 1. إعداد الصفحة
 st.set_page_config(page_title="InsurTech", page_icon="🛡️", layout="wide")
 
-# 2. وظيفة تحميل الخلفية (تأكد أن الملف اسمه background.png)
+# 2. تحميل الخلفية الأصلية (تأكد من وجود ملف background.png)
 def get_base64_img(bin_file):
     try:
         with open(bin_file, 'rb') as f:
@@ -15,23 +15,22 @@ def get_base64_img(bin_file):
 
 bg_data = get_base64_img('background.png')
 
-# 3. الـ CSS السحري (RTL + إخفاء الأدوات + Responsive)
+# 3. الـ CSS لفرض الصورة كخلفية وإخفاء أي لون رمادي
 style_css = f"""
 <style>
-    /* إخفاء شريط الأدوات العلوي والأسفل تماماً */
     header, footer, #MainMenu {{visibility: hidden;}}
     
-    /* ضبط الخلفية والاتجاه العام للعربية */
+    /* فرض الخلفية على كل الطبقات */
     .stApp {{
-        background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url("data:image/png;base64,{bg_data}");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        direction: RTL;
-        text-align: right;
+        background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("data:image/png;base64,{bg_data}");
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
     }}
+    
+    /* إزالة الخلفية الرمادية من الحاويات */
+    .stVerticalBlock, .stColumn {{ background-color: transparent !important; }}
 
-    /* كارت تسجيل الدخول */
     .auth-card {{
         background: rgba(10, 25, 41, 0.9);
         border: 2px solid #00f2fe;
@@ -39,81 +38,82 @@ style_css = f"""
         padding: 40px;
         max-width: 500px;
         margin: auto;
-        box-shadow: 0 0 30px rgba(0, 242, 254, 0.3);
     }}
 
-    /* تحسين الخانات والزراير للموبايل */
-    h1, h2, h3, p, label {{ color: white !important; font-family: 'Tahoma', sans-serif; }}
-    .stButton>button {{
-        width: 100% !important;
-        background-color: #00f2fe !important;
-        color: #0a1929 !important;
-        font-weight: bold !important;
-        border-radius: 10px !important;
-        height: 48px !important;
-    }}
-    
-    /* منع الرموز من قلب اتجاه الخانات */
-    input {{ direction: RTL !important; text-align: right !important; }}
+    h1, h2, h3, p, label {{ color: white !important; }}
+    .stButton>button {{ background-color: #00f2fe !important; color: #0a1929 !important; font-weight: bold; width: 100%; }}
 </style>
 """
 st.markdown(style_css, unsafe_allow_html=True)
 
-# 4. إدارة حالة الجلسة (Session State)
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
+# 4. قاموس اللغات (Translations)
+texts = {
+    "العربية": {
+        "title": "🛡️ InsurTech",
+        "subtitle": "سجل دخولك للوصول لنظام التأمين الذكي",
+        "user": "اسم المستخدم",
+        "pass": "كلمة المرور",
+        "login": "تسجيل الدخول",
+        "remember": "تذكرني",
+        "forgot": "نسيت كلمة المرور؟",
+        "new": "إنشاء حساب جديد",
+        "err_empty": "❌ الخانات فارغة!",
+        "err_symbols": "⚠️ لا تستخدم رموز مثل (@, #, $)",
+        "err_wrong": "❌ البيانات غلط"
+    },
+    "English": {
+        "title": "🛡️ InsurTech",
+        "subtitle": "Login to access the smart insurance system",
+        "user": "Username",
+        "pass": "Password",
+        "login": "Login",
+        "remember": "Remember me",
+        "forgot": "Forgot Password?",
+        "new": "Create New Account",
+        "err_empty": "❌ Fields are empty!",
+        "err_symbols": "⚠️ No special characters allowed",
+        "err_wrong": "❌ Invalid credentials"
+    }
+}
 
-# 5. واجهة المستخدم (UI)
-if not st.session_state.logged_in:
-    # شريط علوي بسيط للغة والتسجيل الجديد
-    col_lang, col_reg = st.columns([1, 1])
-    with col_lang:
-        st.selectbox("🌐 اللغة", ["العربية", "English"])
-    with col_reg:
-        if st.button("إنشاء حساب جديد"):
-            st.toast("سيتم فتح صفحة التسجيل قريباً")
+# 5. اختيار اللغة (والمحاذاة بناءً عليها)
+lang = st.sidebar.selectbox("🌐 Language / اللغة", ["العربية", "English"])
+t = texts[lang]
+direction = "RTL" if lang == "العربية" else "LTR"
 
-    st.write("##") # مسافة
+# تطبيق اتجاه النص بناءً على اللغة
+st.markdown(f'<div style="direction: {direction}; text-align: {"right" if direction=="RTL" else "left"};">', unsafe_allow_html=True)
 
-    # حاوية الدخول الرئيسية
+# 6. واجهة المستخدم
+st.write("##") 
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col2:
     st.markdown('<div class="auth-card">', unsafe_allow_html=True)
-    st.markdown("<h1 style='text-align: center;'>🛡️ InsurTech</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; opacity: 0.8;'>سجل دخولك للوصول لنظام التأمين الذكي</p>", unsafe_allow_html=True)
+    st.markdown(f"<h1 style='text-align: center;'>{t['title']}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align: center; opacity: 0.8;'>{t['subtitle']}</p>", unsafe_allow_html=True)
     
     with st.form("login_form"):
-        u = st.text_input("اسم المستخدم", placeholder="User123")
-        p = st.text_input("كلمة المرور", type="password")
+        u = st.text_input(t["user"])
+        p = st.text_input(t["pass"], type="password")
+        rem = st.checkbox(t["remember"])
         
-        col_check, col_forgot = st.columns([1, 1])
-        with col_check:
-            remember = st.checkbox("تذكرني")
-        with col_forgot:
-            # زر "نسيت كلمة المرور" داخل الفورم لضبط الشكل
-            pass # سيتم وضعه بالخارج ليعمل كـ Button
-
-        submit = st.form_submit_button("تسجيل الدخول")
+        submit = st.form_submit_button(t["login"])
         
-        # --- نظام التنبيهات الذكي (التحقق من البيانات) ---
         if submit:
             if not u or not p:
-                st.error("❌ عذراً، يجب إدخال اسم المستخدم وكلمة المرور")
+                st.error(t["err_empty"])
             elif bool(re.search(r'[^a-zA-Z0-9\u0621-\u064A ]', u)):
-                st.error("⚠️ خطأ: لا يسمح باستخدام رموز خاصة مثل (#, $, @, *)")
+                st.error(t["err_symbols"])
             elif u == "admin" and p == "123":
-                st.session_state.logged_in = True
-                st.success("تم الدخول بنجاح! 🎉")
+                st.success("Success!")
                 st.rerun()
             else:
-                st.error("❌ خطأ في البيانات، تأكد من صحة الحساب")
+                st.error(t["err_wrong"])
     
-    if st.button("Forgot Password / نسيت كلمة المرور؟"):
-        st.info("💡 يرجى مراسلة الدعم الفني لاستعادة حسابك.")
-        
+    if st.button(t["forgot"]):
+        st.info("Support: admin@insurtech.com")
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 6. واجهة التطبيق بعد الدخول
-else:
-    st.success("أهلاً بك في لوحة تحكم InsurTech")
-    if st.button("تسجيل الخروج"):
-        st.session_state.logged_in = False
-        st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
