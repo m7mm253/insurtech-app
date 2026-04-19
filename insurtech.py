@@ -1,90 +1,88 @@
 import streamlit as st
 import pandas as pd
 
-# 1. إعدادات الصفحة
+# 1. إعداد الصفحة
 st.set_page_config(page_title="SecureNow Egypt", page_icon="🛡️", layout="centered")
 
-# 2. إدارة الحالة (Session State) للغة وتسجيل الدخول
-if 'language' not in st.session_state:
-    st.session_state.language = 'العربية'
+# 2. تهيئة مخزن البيانات (Session State)
+if 'users_db' not in st.session_state:
+    st.session_state.users_db = {'admin': '123'} # مستخدم افتراضي
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+if 'current_user' not in st.session_state:
+    st.session_state.current_user = None
+if 'db_policies' not in st.session_state:
+    st.session_state.db_policies = []
 
-# --- قاموس اللغات (Translations) ---
-texts = {
-    'العربية': {
-        'welcome': 'مرحباً بك في SecureNow',
-        'login': 'تسجيل الدخول',
-        'user': 'اسم المستخدم',
-        'pass': 'كلمة المرور',
-        'enter': 'دخول',
-        'logout': 'تسجيل خروج',
-        'buy': 'شراء تأمين',
-        'my_policies': 'تأميناتي',
-        'admin': 'الإدارة',
-        'error': 'بيانات الدخول غير صحيحة'
-    },
-    'English': {
-        'welcome': 'Welcome to SecureNow',
-        'login': 'Login',
-        'user': 'Username',
-        'pass': 'Password',
-        'enter': 'Enter',
-        'logout': 'Logout',
-        'buy': 'Buy Insurance',
-        'my_policies': 'My Policies',
-        'admin': 'Admin Dashboard',
-        'error': 'Invalid credentials'
-    }
-}
-
-# --- شاشة اختيار اللغة وتسجيل الدخول ---
+# --- واجهة الدخول واختيار اللغة ---
 if not st.session_state.logged_in:
-    st.title("🛡️ SecureNow")
+    st.title("🛡️ SecureNow Egypt")
     
     # اختيار اللغة
     lang = st.radio("Choose Language / اختر اللغة", ["العربية", "English"], horizontal=True)
-    st.session_state.language = lang
-    T = texts[st.session_state.language]
     
-    st.subheader(T['login'])
-    
-    # واجهة تسجيل الدخول
-    with st.form("login_form"):
-        username = st.text_input(T['user'])
-        password = st.text_input(T['pass'], type="password")
-        submit = st.form_submit_button(T['enter'])
-        
-        if submit:
-            # تجربة: اسم المستخدم admin وكلمة السر 123
-            if username == "admin" and password == "123":
-                st.session_state.logged_in = True
-                st.rerun()
-            else:
-                st.error(T['error'])
+    auth_tabs = st.tabs(["تسجيل الدخول (Login)", "إنشاء حساب (Sign Up)"] if lang == "العربية" else ["Login", "Sign Up"])
 
-# --- التطبيق الأصلي (يظهر بعد تسجيل الدخول) ---
+    # --- تسجيل الدخول ---
+    with auth_tabs[0]:
+        with st.form("login"):
+            u = st.text_input("Username / اسم المستخدم")
+            p = st.text_input("Password / كلمة المرور", type="password")
+            if st.form_submit_button("Enter / دخول"):
+                if u in st.session_state.users_db and st.session_state.users_db[u] == p:
+                    st.session_state.logged_in = True
+                    st.session_state.current_user = u
+                    st.rerun()
+                else:
+                    st.error("خطأ في البيانات / Invalid Credentials")
+
+    # --- إنشاء حساب جديد ---
+    with auth_tabs[1]:
+        with st.form("signup"):
+            new_u = st.text_input("Choose Username / اختر اسم مستخدم")
+            new_p = st.text_input("Password / كلمة مرور", type="password")
+            conf_p = st.text_input("Confirm / تأكيد الكلمة", type="password")
+            if st.form_submit_button("Create / إنشاء"):
+                if new_p == conf_p and new_u:
+                    st.session_state.users_db[new_u] = new_p
+                    st.success("Account Created! / تم إنشاء الحساب")
+                else:
+                    st.error("Check details / تأكد من البيانات")
+
+# --- واجهة التطبيق الحقيقية (بعد الدخول) ---
 else:
-    T = texts[st.session_state.language]
+    st.sidebar.title(f"Welcome, {st.session_state.current_user} 👋")
+    menu = ["شراء تأمين", "تأميناتي", "Admin"]
+    choice = st.sidebar.radio("Go to:", menu)
     
-    # القائمة الجانبية
-    st.sidebar.title(f"🛡️ {T['welcome']}")
-    choice = st.sidebar.radio("Menu", [T['buy'], T['my_policies'], T['admin']])
-    
-    if st.sidebar.button(T['logout']):
+    if st.sidebar.button("Logout / خروج"):
         st.session_state.logged_in = False
         st.rerun()
 
-    # محتوى التطبيق (الجزء اللي عملناه قبل كدة)
-    if choice == T['buy']:
-        st.header(T['buy'])
-        st.write("هنا تظهر واجهة الشراء...")
-        # يمكنك وضع كود الشراء السابق هنا
-        
-    elif choice == T['my_policies']:
-        st.header(T['my_policies'])
-        st.write("هنا تظهر قائمة التأمينات...")
+    if choice == "شراء تأمين":
+        st.header("⚡ اطلب بوليصتك الآن")
+        cat = st.selectbox("النوع:", ["🚗 سيارة", "📱 موبايل", "📦 شحنة"])
+        days = st.number_input("المدة (أيام):", 1, 30)
+        price = days * 50 # سعر افتراضي
+        st.metric("التكلفة", f"{price} EGP")
+        if st.button("تفعيل ✅"):
+            st.session_state.db_policies.append({"User": st.session_state.current_user, "Type": cat, "Price": price})
+            st.balloons()
+            st.success("تم التفعيل!")
 
-    elif choice == T['admin']:
-        st.header(T['admin'])
-        st.write("لوحة التحكم الخاصة بالإدارة")
+    elif choice == "تأميناتي":
+        st.header("📋 بوالصك النشطة")
+        user_pols = [p for p in st.session_state.db_policies if p['User'] == st.session_state.current_user]
+        if user_pols:
+            st.table(pd.DataFrame(user_pols))
+        else:
+            st.info("لا توجد بوالص حالياً.")
+
+    elif choice == "Admin":
+        st.header("📊 لوحة الإدارة")
+        if st.session_state.db_policies:
+            st.write("إجمالي المبيعات:")
+            st.table(pd.DataFrame(st.session_state.db_policies))
+        else:
+            st.write("لا توجد بيانات.")
+            
